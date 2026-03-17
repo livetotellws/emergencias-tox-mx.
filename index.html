@@ -6,8 +6,8 @@
     <meta name="description" content="Guía Toxicológica de Especies - Emergencias Médicas en México">
     <meta name="theme-color" content="#2c3e50">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%232c3e50' width='192' height='192'/><text x='50%' y='50%' font-size='120' fill='white' text-anchor='middle' dominant-baseline='middle' font-weight='bold'>⚕</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%232c3e50' width='192' height='192'/><text x='50%' y='50%' font-size='120' fill='white' text-anchor='middle' dominant-baseline='middle' font-weight='bold'>⚕</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 192 192\'><rect fill=\'%232c3e50\' width=\'192\' height=\'192\'/><text x=\'50%\' y=\'50%\' font-size=\'120\' fill=\'white\' text-anchor=\'middle\' dominant-baseline=\'middle\' font-weight=\'bold\'>⚕</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 192 192\'><rect fill=\'%232c3e50\' width=\'192\' height=\'192\'/><text x=\'50%\' y=\'50%\' font-size=\'120\' fill=\'white\' text-anchor=\'middle\' dominant-baseline=\'middle\' font-weight=\'bold\'>⚕</text></svg>">
     <title>Guía Toxicológica - ToxicoPWA</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -19,12 +19,10 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', \'Roboto\', \'Oxygen\', \'Ubuntu\', \'Cantarell\', sans-serif;
             background-color: #f9fafb;
         }
-        
         .offline-indicator {
             position: fixed;
             top: 0;
@@ -39,21 +37,17 @@
             font-weight: bold;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        
         .offline-indicator.show {
             display: block;
         }
-        
         .species-card {
             transition: all 0.3s ease;
             cursor: pointer;
         }
-        
         .species-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
-        
         .severity-badge {
             display: inline-block;
             padding: 0.375rem 0.875rem;
@@ -61,22 +55,18 @@
             font-size: 0.875rem;
             font-weight: 600;
         }
-        
         .severity-leve {
             background-color: #dcfce7;
             color: #166534;
         }
-        
         .severity-moderado {
             background-color: #fef3c7;
             color: #92400e;
         }
-        
         .severity-severo {
             background-color: #fee2e2;
             color: #991b1b;
         }
-        
         .loading-spinner {
             border: 4px solid #e5e7eb;
             border-top: 4px solid #2c3e50;
@@ -85,29 +75,73 @@
             height: 40px;
             animation: spin 1s linear infinite;
         }
-        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
         .line-clamp-3 {
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .footer-fixed {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #1f2937; /* gray-800 */
+            color: #d1d5db; /* gray-300 */
+            padding: 1rem;
+            text-align: center;
+            z-index: 40;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        body {
+            padding-bottom: 150px; /* Ajusta esto según la altura de tu footer */
+        }
+        .canvas-container {
+            border: 1px solid #ccc;
+            cursor: crosshair;
+            touch-action: none; /* Prevent default touch actions like scrolling */
+        }
     </style>
 </head>
 <body>
-    <div id="offline-indicator" class="offline-indicator">
-        📡 Modo Offline - Funcionando sin conexión a internet
-    </div>
+    <div id="offline-indicator" class="offline-indicator">📡 Modo Offline - Funcionando sin conexión a internet</div>
     
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useCallback } = React;
 
         // Base de datos de especies toxicológicas
         const SPECIES_DATABASE = [
@@ -131,10 +165,9 @@
                 },
                 antiveno: 'Alacramyn (Antialacran)',
                 dosis: {
-                    leve: 'Adultos: 1 frasco IV lenta',
-                    moderado: 'Adultos: 2 frascos IV lenta',
-                    severo: 'Adultos: 3 frascos IV lenta',
-                    pediatrico: 'Niños <5 años: Duplicar dosis'
+                    leve: { adulto: '1 frasco IV lenta', pediatrico: '2 frascos IV lenta' },
+                    moderado: { adulto: '2 frascos IV lenta', pediatrico: '4 frascos IV lenta' },
+                    severo: { adulto: '3 frascos IV lenta', pediatrico: '6 frascos IV lenta' }
                 },
                 no_hacer: [
                     'NO aplicar torniquetes',
@@ -164,10 +197,9 @@
                 },
                 antiveno: 'Antivipymn (Antiviperino polivalente)',
                 dosis: {
-                    leve: 'Adultos: 3-5 frascos IV',
-                    moderado: 'Adultos: 6-10 frascos IV',
-                    severo: 'Adultos: 11-15 frascos IV',
-                    pediatrico: 'Niños: 6-10 (Leve), 15 (Moderado), 20-30 (Severo)'
+                    leve: { adulto: '3-5 frascos IV', pediatrico: '6-10 frascos IV' },
+                    moderado: { adulto: '6-10 frascos IV', pediatrico: '15 frascos IV' },
+                    severo: { adulto: '11-15 frascos IV', pediatrico: '20-30 frascos IV' }
                 },
                 no_hacer: [
                     'NO aplicar torniquetes',
@@ -197,8 +229,8 @@
                 },
                 antiveno: 'Aracmyn Plus (Antiarácnido polivalente)',
                 dosis: {
-                    moderado: 'Adultos: 1 frasco, Niños <15 años: 2 frascos',
-                    severo: 'Adultos: 2 frascos, Niños <15 años: 3 frascos'
+                    moderado: { adulto: '1 frasco', pediatrico: '2 frascos' },
+                    severo: { adulto: '2 frascos', pediatrico: '3 frascos' }
                 },
                 no_hacer: [
                     'NO aplicar torniquetes',
@@ -227,7 +259,7 @@
                 },
                 antiveno: 'Manejo sintomático',
                 dosis: {
-                    general: 'Consultar con Centro de Toxicología Regional'
+                    general: { adulto: 'Consultar con Centro de Toxicología Regional', pediatrico: 'Consultar con Centro de Toxicología Regional' }
                 },
                 no_hacer: [
                     'NO automedicarse',
@@ -255,7 +287,7 @@
                 },
                 antiveno: 'Manejo sintomático',
                 dosis: {
-                    general: 'Consultar con Centro de Toxicología Regional'
+                    general: { adulto: 'Consultar con Centro de Toxicología Regional', pediatrico: 'Consultar con Centro de Toxicología Regional' }
                 },
                 no_hacer: [
                     'NO automedicarse',
@@ -265,44 +297,319 @@
             }
         ];
 
+        // ESAVI Data (simplified for example)
+        const ESAVI_DATA = [
+            { id: 1, evento: 'Reacción anafiláctica', antiveneno: 'Alacramyn', frecuencia: 'Rara', manejo: 'Adrenalina IM, antihistamínicos, corticoides' },
+            { id: 2, evento: 'Enfermedad del suero', antiveneno: 'Antivipymn', frecuencia: 'Poco común', manejo: 'Antihistamínicos, corticoides' },
+            { id: 3, evento: 'Urticaria', antiveneno: 'Aracmyn Plus', frecuencia: 'Común', manejo: 'Antihistamínicos' },
+            { id: 4, evento: 'Fiebre', antiveneno: 'Todos', frecuencia: 'Común', manejo: 'Paracetamol' },
+        ];
+
+        // IndexedDB Helper Functions
+        const openDB = () => {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('ToxicoDB', 2);
+
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('especies')) {
+                        const speciesStore = db.createObjectStore('especies', { keyPath: 'id' });
+                        speciesStore.createIndex('nombre_comun', 'nombre_comun', { unique: false });
+                        speciesStore.createIndex('clasificacion', 'clasificacion', { unique: false });
+                        speciesStore.createIndex('nivel_toxicidad', 'nivel_toxicidad', { unique: false });
+                    }
+                    if (!db.objectStoreNames.contains('timers')) {
+                        db.createObjectStore('timers', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('edema_markings')) {
+                        db.createObjectStore('edema_markings', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    const db = event.target.result;
+                    // Populate species data if empty
+                    const transaction = db.transaction(['especies'], 'readwrite');
+                    const store = transaction.objectStore('especies');
+                    store.count().onsuccess = (e) => {
+                        if (e.target.result === 0) {
+                            SPECIES_DATABASE.forEach(sp => store.add(sp));
+                        }
+                    };
+                    resolve(db);
+                };
+
+                request.onerror = (event) => {
+                    reject('IndexedDB error: ' + event.target.errorCode);
+                };
+            });
+        };
+
+        const addData = async (storeName, data) => {
+            const db = await openDB();
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            return new Promise((resolve, reject) => {
+                const request = store.add(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        };
+
+        const getAllData = async (storeName) => {
+            const db = await openDB();
+            const transaction = db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            return new Promise((resolve, reject) => {
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        };
+
         // Componente de Tarjeta de Especie
         function SpeciesCard({ species, onClick }) {
             const getSeverityColor = (severity) => {
                 switch (severity) {
-                    case 'Leve':
-                        return 'severity-leve';
-                    case 'Moderado':
-                        return 'severity-moderado';
-                    case 'Severo':
-                        return 'severity-severo';
-                    default:
-                        return 'severity-leve';
+                    case 'Leve': return 'severity-leve';
+                    case 'Moderado': return 'severity-moderado';
+                    case 'Severo': return 'severity-severo';
+                    default: return 'severity-leve';
                 }
+            };
+            return (
+                <div onClick={onClick} className="species-card bg-white rounded-lg shadow-md p-6">
+                    <div className="mb-3"><span className={`severity-badge ${getSeverityColor(species.nivel_toxicidad)}`}>{species.nivel_toxicidad}</span></div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-1">{species.nombre_comun}</h3>
+                    <p className="text-gray-600 italic text-sm mb-3">{species.nombre_cientifico}</p>
+                    <p className="text-gray-700 text-sm mb-4 line-clamp-3">{species.descripcion}</p>
+                    <div className="flex items-center justify-between text-sm"><span className="text-gray-600">📁 {species.clasificacion}</span><span className="text-blue-600 font-semibold">Ver detalles →</span></div>
+                </div>
+            );
+        }
+
+        // Componente de Calculadora Dinámica de Faboterapia
+        function FabotherapyCalculator({ species }) {
+            const [severity, setSeverity] = useState('Leve');
+            const [ageGroup, setAgeGroup] = useState('adulto');
+
+            const dosis = species.dosis[severity.toLowerCase()]?.[ageGroup] || 'No disponible';
+
+            return (
+                <div className="bg-blue-50 border-2 border-blue-500 rounded-lg p-4 mb-6">
+                    <h3 className="text-lg font-bold text-blue-800 mb-3">💉 Calculadora de Faboterapia</h3>
+                    <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="severity-select">Grado de Severidad:</label>
+                        <select
+                            id="severity-select"
+                            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            value={severity}
+                            onChange={(e) => setSeverity(e.target.value)}
+                        >
+                            <option value="Leve">Leve</option>
+                            <option value="Moderado">Moderado</option>
+                            <option value="Severo">Severo</option>
+                        </select>
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="age-group-select">Grupo de Edad:</label>
+                        <select
+                            id="age-group-select"
+                            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            value={ageGroup}
+                            onChange={(e) => setAgeGroup(e.target.value)}
+                        >
+                            <option value="adulto">Adulto</option>
+                            <option value="pediatrico">Pediátrico (&lt;5 años)</option>
+                        </select>
+                    </div>
+                    <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+                        <p className="text-sm font-semibold text-blue-800">Dosis Recomendada:</p>
+                        <p className="text-blue-900 font-bold text-lg mt-1">{dosis}</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // Componente de Cronómetro de Evolución Clínica
+        function ClinicalTimer() {
+            const [startTime, setStartTime] = useState(null);
+            const [elapsedTime, setElapsedTime] = useState(0);
+            const [isRunning, setIsRunning] = useState(false);
+            const intervalRef = useRef(null);
+
+            useEffect(() => {
+                const loadTimer = async () => {
+                    const timers = await getAllData('timers');
+                    if (timers.length > 0) {
+                        const latestTimer = timers[timers.length - 1];
+                        setStartTime(latestTimer.startTime);
+                        setElapsedTime(Date.now() - latestTimer.startTime);
+                        setIsRunning(latestTimer.isRunning);
+                    }
+                };
+                loadTimer();
+            }, []);
+
+            useEffect(() => {
+                if (isRunning) {
+                    intervalRef.current = setInterval(() => {
+                        setElapsedTime(Date.now() - startTime);
+                    }, 1000);
+                } else {
+                    clearInterval(intervalRef.current);
+                }
+                return () => clearInterval(intervalRef.current);
+            }, [isRunning, startTime]);
+
+            const startTimer = async () => {
+                const now = Date.now();
+                setStartTime(now);
+                setIsRunning(true);
+                await addData('timers', { startTime: now, isRunning: true });
+            };
+
+            const stopTimer = async () => {
+                setIsRunning(false);
+                await addData('timers', { startTime: startTime, isRunning: false, endTime: Date.now() });
+            };
+
+            const resetTimer = async () => {
+                clearInterval(intervalRef.current);
+                setStartTime(null);
+                setElapsedTime(0);
+                setIsRunning(false);
+                // Optionally clear all timers from IndexedDB or add a new 'reset' entry
+            };
+
+            const formatTime = (ms) => {
+                const totalSeconds = Math.floor(ms / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             };
 
             return (
-                <div onClick={onClick} className="species-card bg-white rounded-lg shadow-md p-6">
-                    <div className="mb-3">
-                        <span className={`severity-badge ${getSeverityColor(species.nivel_toxicidad)}`}>
-                            {species.nivel_toxicidad}
-                        </span>
+                <div className="bg-purple-50 border-2 border-purple-500 rounded-lg p-4 mb-6">
+                    <h3 className="text-lg font-bold text-purple-800 mb-3">⏱️ Cronómetro de Evolución Clínica</h3>
+                    <div className="text-center mb-4">
+                        <p className="text-5xl font-mono text-gray-900">{formatTime(elapsedTime)}</p>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-1">
-                        {species.nombre_comun}
-                    </h3>
-                    <p className="text-gray-600 italic text-sm mb-3">
-                        {species.nombre_cientifico}
-                    </p>
-                    <p className="text-gray-700 text-sm mb-4 line-clamp-3">
-                        {species.descripcion}
-                    </p>
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">
-                            📁 {species.clasificacion}
-                        </span>
-                        <span className="text-blue-600 font-semibold">
-                            Ver detalles →
-                        </span>
+                    <div className="flex justify-center space-x-4">
+                        {!isRunning ? (
+                            <button onClick={startTimer} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold">Iniciar</button>
+                        ) : (
+                            <button onClick={stopTimer} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold">Detener</button>
+                        )}
+                        <button onClick={resetTimer} className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold">Reiniciar</button>
+                    </div>
+                    {startTime && <p className="text-center text-sm text-gray-600 mt-2">Inicio: {new Date(startTime).toLocaleString()}</p>}
+                </div>
+            );
+        }
+
+        // Componente de Marcaje de Edema
+        function EdemaMarker() {
+            const canvasRef = useRef(null);
+            const [isDrawing, setIsDrawing] = useState(false);
+            const [marks, setMarks] = useState([]);
+
+            useEffect(() => {
+                const loadMarks = async () => {
+                    const savedMarks = await getAllData('edema_markings');
+                    setMarks(savedMarks);
+                };
+                loadMarks();
+            }, []);
+
+            const startDrawing = ({ nativeEvent }) => {
+                const { offsetX, offsetY } = nativeEvent;
+                setIsDrawing(true);
+                const newMark = { x: offsetX, y: offsetY, timestamp: Date.now() };
+                setMarks((prevMarks) => [...prevMarks, newMark]);
+                addData('edema_markings', newMark);
+            };
+
+            const draw = useCallback(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                marks.forEach(mark => {
+                    ctx.beginPath();
+                    ctx.arc(mark.x, mark.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = 'red';
+                    ctx.fill();
+                });
+            }, [marks]);
+
+            useEffect(() => {
+                draw();
+            }, [draw]);
+
+            const clearMarks = () => {
+                setMarks([]);
+                // Clear from IndexedDB
+                openDB().then(db => {
+                    const transaction = db.transaction(['edema_markings'], 'readwrite');
+                    const store = transaction.objectStore('edema_markings');
+                    store.clear();
+                });
+            };
+
+            return (
+                <div className="bg-yellow-50 border-2 border-yellow-500 rounded-lg p-4 mb-6">
+                    <h3 className="text-lg font-bold text-yellow-800 mb-3">📏 Herramienta de Marcaje de Edema</h3>
+                    <p className="text-sm text-gray-700 mb-2">Haz clic en el área de la imagen para marcar la progresión del edema. Se recomienda marcar cada 30 minutos.</p>
+                    <div className="flex justify-center items-center bg-gray-100 p-2 rounded-md">
+                        <canvas
+                            ref={canvasRef}
+                            width="300"
+                            height="300"
+                            className="canvas-container bg-white"
+                            onMouseDown={startDrawing}
+                            onTouchStart={startDrawing}
+                        ></canvas>
+                    </div>
+                    <div className="flex justify-center mt-4">
+                        <button onClick={clearMarks} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold">Borrar Marcas</button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Componente de Vigilancia de ESAVI
+        function ESAVIMonitor() {
+            const [searchTerm, setSearchTerm] = useState('');
+            const filteredESAVI = ESAVI_DATA.filter(item =>
+                item.evento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.antiveneno.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            return (
+                <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4 mb-6">
+                    <h3 className="text-lg font-bold text-red-800 mb-3">🚨 Módulo de Vigilancia de ESAVI</h3>
+                    <input
+                        type="text"
+                        placeholder="Buscar evento o antiveneno..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-red-600"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <div className="space-y-3">
+                        {filteredESAVI.length > 0 ? (
+                            filteredESAVI.map(item => (
+                                <div key={item.id} className="bg-white p-3 rounded-lg shadow-sm">
+                                    <p className="font-semibold text-gray-800">Evento: {item.evento}</p>
+                                    <p className="text-sm text-gray-600">Antiveneno: {item.antiveneno}</p>
+                                    <p className="text-sm text-gray-600">Frecuencia: {item.frecuencia}</p>
+                                    <p className="text-sm text-gray-700 mt-1">Manejo: {item.manejo}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-gray-600">No se encontraron ESAVI que coincidan con la búsqueda.</p>
+                        )}
                     </div>
                 </div>
             );
@@ -312,14 +619,10 @@
         function DetailView({ species, onBack }) {
             const getSeverityColor = (severity) => {
                 switch (severity) {
-                    case 'Leve':
-                        return 'severity-leve';
-                    case 'Moderado':
-                        return 'severity-moderado';
-                    case 'Severo':
-                        return 'severity-severo';
-                    default:
-                        return 'severity-leve';
+                    case 'Leve': return 'severity-leve';
+                    case 'Moderado': return 'severity-moderado';
+                    case 'Severo': return 'severity-severo';
+                    default: return 'severity-leve';
                 }
             };
 
@@ -401,27 +704,23 @@
                             </div>
                         </div>
 
-                        {/* Panel de Tratamiento */}
+                        {/* Panel de Tratamiento y Herramientas */}
                         <div className="md:col-span-1">
-                            <div className="bg-green-50 border-2 border-green-500 rounded-lg p-4 sticky top-4">
-                                <h3 className="text-lg font-bold text-green-800 mb-3">💊 Tratamiento</h3>
-                                
-                                {species.antiveno && (
-                                    <div className="mb-4">
-                                        <p className="text-sm text-gray-600 font-semibold">Antiveno:</p>
-                                        <p className="text-green-800 font-bold">{species.antiveno}</p>
-                                    </div>
-                                )}
-
-                                <div className="space-y-3">
-                                    {Object.entries(species.dosis).map(([nivel, dosis]) => (
-                                        <div key={nivel} className="bg-white p-3 rounded-lg border border-green-200">
-                                            <p className="text-xs font-semibold text-gray-600 uppercase">{nivel}</p>
-                                            <p className="text-sm text-gray-800">{dosis}</p>
+                            <div className="sticky top-4">
+                                <div className="bg-green-50 border-2 border-green-500 rounded-lg p-4 mb-6">
+                                    <h3 className="text-lg font-bold text-green-800 mb-3">💊 Tratamiento</h3>
+                                    
+                                    {species.antiveno && (
+                                        <div className="mb-4">
+                                            <p className="text-sm text-gray-600 font-semibold">Antiveno:</p>
+                                            <p className="text-green-800 font-bold">{species.antiveno}</p>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
-
+                                <FabotherapyCalculator species={species} />
+                                <ClinicalTimer />
+                                <EdemaMarker />
+                                <ESAVIMonitor />
                                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
                                     <p className="text-xs font-semibold text-yellow-800">⚠️ IMPORTANTE</p>
                                     <p className="text-xs text-yellow-900 mt-1">
@@ -435,14 +734,37 @@
             );
         }
 
+        // Componente Modal para Aviso de Privacidad
+        function PrivacyModal({ isOpen, onClose, children }) {
+            if (!isOpen) return null;
+            return (
+                <div className="modal" onClick={onClose}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <span className="modal-close-button" onClick={onClose}>&times;</span>
+                        {children}
+                    </div>
+                </div>
+            );
+        }
+
         // Componente principal
         function ToxicoPWA() {
-            const [species, setSpecies] = useState(SPECIES_DATABASE);
-            const [filteredSpecies, setFilteredSpecies] = useState(SPECIES_DATABASE);
+            const [species, setSpecies] = useState([]);
+            const [filteredSpecies, setFilteredSpecies] = useState([]);
             const [searchTerm, setSearchTerm] = useState('');
             const [selectedSpecies, setSelectedSpecies] = useState(null);
             const [isOnline, setIsOnline] = useState(navigator.onLine);
-            const [loading, setLoading] = useState(false);
+            const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+
+            useEffect(() => {
+                const initApp = async () => {
+                    await openDB(); // Ensure DB is open and populated
+                    const allSpecies = await getAllData('especies');
+                    setSpecies(allSpecies);
+                    setFilteredSpecies(allSpecies);
+                };
+                initApp();
+            }, []);
 
             // Manejar búsqueda
             useEffect(() => {
@@ -461,14 +783,8 @@
 
             // Detectar estado online/offline
             useEffect(() => {
-                const handleOnline = () => {
-                    setIsOnline(true);
-                    document.getElementById('offline-indicator').classList.remove('show');
-                };
-                const handleOffline = () => {
-                    setIsOnline(false);
-                    document.getElementById('offline-indicator').classList.add('show');
-                };
+                const handleOnline = () => { setIsOnline(true); document.getElementById('offline-indicator').classList.remove('show'); };
+                const handleOffline = () => { setIsOnline(false); document.getElementById('offline-indicator').classList.add('show'); };
 
                 window.addEventListener('online', handleOnline);
                 window.addEventListener('offline', handleOffline);
@@ -484,7 +800,7 @@
                 if ('serviceWorker' in navigator) {
                     window.addEventListener('load', async () => {
                         try {
-                            const reg = await navigator.serviceWorker.register('/service-worker.js');
+                            const reg = await navigator.serviceWorker.register('/sw.js');
                             console.log('✅ Service worker registrado con éxito', reg);
                         } catch (err) {
                             console.log('❌ Fallo en el registro del Service worker', err);
@@ -492,6 +808,10 @@
                     });
                 }
             }, []);
+
+            const privacyNoticeContent = `
+                # Aviso de Privacidad Integral - Emergencias Tox MX\n\n**Fecha de última actualización:** 17 de marzo de 2026\n\n**Responsable del Tratamiento de Datos Personales:**\nDr. Carlos Antonio Camarillo Gutierrez\nDomicilio Legal: Privada Rincon de la Cruz, No. 12, Avenida Forjadores 1021, San Pedro Cholula, Puebla.\nContacto de Privacidad: Tel: 2215579943 / WhatsApp: 2221044565.\n\nEn adelante, "Emergencias Tox MX" o "la Aplicación", reconoce la importancia de la privacidad y la seguridad de los datos personales de sus usuarios, especialmente aquellos relacionados con la salud. Este Aviso de Privacidad Integral se emite en cumplimiento de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) y su Reglamento.\n\n## 1. Datos Personales Recabados\n\nLa Aplicación "Emergencias Tox MX" está diseñada para ser una herramienta de consulta y apoyo clínico. **No recaba, almacena ni procesa datos personales identificables de los usuarios en servidores externos.** Todos los datos generados por el usuario, incluyendo:\n\n*   **Información de interacción con la aplicación:** Selecciones de especies, grados de severidad, resultados de cálculos de faboterapia, registros de cronómetro, y marcaciones de edema.\n*   **Datos de salud sensibles:** Aunque la aplicación no solicita directamente datos de salud identificables, la información generada por el usuario al interactuar con la calculadora de faboterapia o el cronómetro de evolución clínica podría, en un contexto clínico específico, ser considerada dato sensible. Es crucial reiterar que esta información **se guarda exclusivamente de forma local en el dispositivo del usuario (IndexedDB)** y no es transmitida ni almacenada por el Responsable.\n\n## 2. Finalidades del Tratamiento de Datos\n\nLos datos generados por el usuario y almacenados localmente en su dispositivo tienen como única finalidad:\n\n*   **Proveer las funcionalidades de la Aplicación:** Permitir el uso de la calculadora de faboterapia, el cronómetro de evolución clínica, el módulo de vigilancia de ESAVI y la herramienta de marcaje de edema.\n*   **Mejorar la experiencia del usuario:** Facilitar el acceso rápido a la información y herramientas clínicas sin depender de una conexión a internet.\n\n**"Emergencias Tox MX" no utiliza los datos personales para fines de mercadotecnia, publicidad, prospección comercial ni para la toma de decisiones automatizadas.**\n\n## 3. Mecanismos para el Ejercicio de Derechos ARCO y Revocación del Consentimiento\n\nDado que la Aplicación no recaba ni almacena datos personales en servidores del Responsable, el ejercicio de los derechos de Acceso, Rectificación, Cancelación y Oposición (Derechos ARCO), así como la revocación del consentimiento, se gestiona directamente por el usuario a través de las funcionalidades de su propio dispositivo y navegador web. Esto incluye:\n\n*   **Acceso y Rectificación:** La información generada puede ser consultada y modificada por el usuario dentro de la aplicación.\n*   **Cancelación y Oposición:** La eliminación de los datos almacenados localmente se puede realizar borrando los datos de navegación del navegador o desinstalando la Aplicación del dispositivo. Esto eliminará toda la información generada y almacenada por "Emergencias Tox MX" en el IndexedDB de su dispositivo.\n\nPara cualquier duda o asistencia relacionada con la gestión de sus datos locales, puede contactar al Responsable a través de los datos de contacto proporcionados al inicio de este aviso.\n\n## 4. Transferencias de Datos Personales\n\n**"Emergencias Tox MX" no realiza transferencias de datos personales a terceros, nacionales o internacionales.** Toda la información se mantiene en el dispositivo del usuario.\n\n## 5. Medidas de Seguridad\n\nLa Aplicación, al operar bajo un modelo de almacenamiento local, minimiza los riesgos asociados a la transmisión y almacenamiento centralizado de datos. Las medidas de seguridad implementadas se centran en la robustez del diseño de la aplicación para evitar la recolección no intencionada de datos y en la transparencia sobre el manejo local de la información.\n\n## 6. Cambios al Aviso de Privacidad\n\nEl presente Aviso de Privacidad puede sufrir modificaciones, cambios o actualizaciones derivadas de nuevos requerimientos legales, de nuestras propias necesidades por los productos o servicios que ofrecemos, de nuestras prácticas de privacidad, de cambios en nuestro modelo de negocio, o por otras causas. Nos comprometemos a mantenerlo informado sobre los cambios que pueda sufrir el presente aviso de privacidad, a través de la publicación de la versión actualizada en la propia Aplicación.\n\nLe recomendamos revisar periódicamente este Aviso de Privacidad para estar informado sobre cómo protegemos su información.
+            `;
 
             return (
                 <div className="min-h-screen bg-gray-50">
@@ -539,12 +859,7 @@
                                 </div>
 
                                 {/* Resultados */}
-                                {loading ? (
-                                    <div className="flex justify-center items-center py-12">
-                                        <div className="loading-spinner"></div>
-                                        <p className="ml-4 text-gray-600">Cargando base de datos...</p>
-                                    </div>
-                                ) : filteredSpecies.length === 0 ? (
+                                {filteredSpecies.length === 0 ? (
                                     <div className="text-center py-12 bg-white rounded-lg shadow">
                                         <p className="text-gray-600 text-lg">No se encontraron especies que coincidan con tu búsqueda.</p>
                                     </div>
@@ -563,22 +878,52 @@
                         )}
                     </main>
 
-                    {/* Footer */}
-                    <footer className="bg-gray-800 text-gray-300 text-center py-6 mt-12">
-                        <p className="text-sm">
-                            📚 Guía Toxicológica PWA v1.0 | Basada en GPC, NOM-033, Manuales SINAVE 2024 y Redtox
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                            ⚠️ Esta aplicación es una herramienta de referencia. En emergencias, contacte al 911 o al Centro de Toxicología Regional.
-                        </p>
+                    {/* Footer Fijo */}
+                    <footer className="footer-fixed">
+                        <div className="max-w-6xl mx-auto px-4 py-2 text-sm">
+                            <p className="mb-1">
+                                Responsable del Tratamiento de Datos: Dr. Carlos Antonio Camarillo Gutierrez.
+                            </p>
+                            <p className="mb-1">
+                                Domicilio Legal: Privada Rincon de la Cruz, No. 12, Avenida Forjadores 1021, San Pedro Cholula, Puebla.
+                            </p>
+                            <p className="mb-2">
+                                Contacto de Privacidad: Tel: 2215579943 / WhatsApp: 2221044565.
+                            </p>
+                            <button 
+                                onClick={() => setIsPrivacyModalOpen(true)}
+                                className="text-blue-400 hover:text-blue-200 font-semibold underline focus:outline-none"
+                            >
+                                Aviso de Privacidad Integral
+                            </button>
+                            <p className="text-xs text-gray-500 mt-2">
+                                📚 Guía Toxicológica PWA v1.0 | Basada en GPC, NOM-033, Manuales SINAVE 2024 y Redtox
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                ⚠️ Esta aplicación es una herramienta de referencia. En emergencias, contacte al 911 o al Centro de Toxicología Regional.
+                            </p>
+                        </div>
                     </footer>
+
+                    {/* Modal de Aviso de Privacidad */}
+                    <PrivacyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)}>
+                        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: marked.parse(privacyNoticeContent) }}></div>
+                    </PrivacyModal>
                 </div>
             );
         }
 
-        // Renderizar aplicación
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<ToxicoPWA />);
+        // Marked.js for Markdown parsing
+        // Load marked.js from CDN
+        const script = document.createElement('script');
+        script.src = "https://cdn.jsdelivr.net/npm/marked/marked.min.js";
+        script.onload = () => {
+            // Renderizar aplicación una vez que marked.js esté cargado
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<ToxicoPWA />);
+        };
+        document.head.appendChild(script);
+
     </script>
 </body>
 </html>
