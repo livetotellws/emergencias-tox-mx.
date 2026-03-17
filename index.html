@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Guía Toxicológica de Especies - Emergencias Médicas en México">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%232c3e50' width='192' height='192'/><text x='50%' y='50%' font-size='120' fill='white' text-anchor='middle' dominant-baseline='middle' font-weight='bold'>⚕</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%232c3e50' width='192' height='192'/><text x='50%' y='50%' font-size='120' fill='white' text-anchor='middle' dominant-baseline='middle' font-weight='bold'>⚕</text></svg>">
+    <title>Guía Toxicológica - ToxicoPWA</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        }
+        .offline-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #ef4444;
+            color: white;
+            padding: 0.5rem;
+            text-align: center;
+            z-index: 50;
+            display: none;
+            font-weight: bold;
+        }
+        .offline-indicator.show {
+            display: block;
+        }
+        .species-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .species-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .severity-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .severity-leve {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .severity-moderado {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .severity-severo {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #2c3e50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script>
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const reg = await navigator.serviceWorker.register('/service-worker.js');
+                    console.log('✅ Service worker registrado con éxito', reg);
+                } catch (err) {
+                    console.log('❌ Fallo en el registro del Service worker', err);
+                }
+            });
+        }
+
+        // Detectar estado offline
+        window.addEventListener('offline', () => {
+            document.getElementById('offline-indicator').classList.add('show');
+        });
+        window.addEventListener('online', () => {
+            document.getElementById('offline-indicator').classList.remove('show');
+        });
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Base de datos de especies toxicológicas
+        const SPECIES_DATABASE = [
+            {
+                id: 1,
+                nombre_comun: 'Alacrán (Centruroides spp.)',
+                nombre_cientifico: 'Centruroides spp.',
+                clasificacion: 'Arácnidos',
+                nivel_toxicidad: 'Severo',
+                descripcion: 'Artrópodo con metasoma (cola) delgada que se va alargando y adelgazando progresivamente hacia el final. Telson (aguijón) con forma de media luna.',
+                rasgos_clave: [
+                    'Metasoma (cola) delgada y segmentada',
+                    'Telson con forma de media luna',
+                    'Pedipalpos grandes y delgados',
+                    'Estructura interna: hileras de dientecillos en los dedos'
+                ],
+                manifestaciones_clinicas: {
+                    leve: 'Dolor local intenso, parestesias locales, prurito nasal/faríngeo',
+                    moderado: 'Sialorrea, sensación de cuerpo extraño, fasciculaciones linguales, nistagmo, distensión abdominal',
+                    severo: 'Convulsiones, edema agudo de pulmón, priapismo, choque, falla orgánica múltiple'
+                },
+                antiveno: 'Alacramyn (Antialacran)',
+                dosis: {
+                    leve: 'Adultos: 1 frasco IV lenta',
+                    moderado: 'Adultos: 2 frascos IV lenta',
+                    severo: 'Adultos: 3 frascos IV lenta',
+                    pediatrico: 'Niños <5 años: Duplicar dosis'
+                },
+                no_hacer: [
+                    'NO aplicar torniquetes',
+                    'NO succionar ni hacer cortes',
+                    'NO aplicar hielo directamente',
+                    'NO automedicarse (especialmente corticoides)'
+                ],
+                distribucion: 'Presente en todo México, especialmente en zonas áridas y semiáridas'
+            },
+            {
+                id: 2,
+                nombre_comun: 'Serpiente de Cascabel (Crotalus spp.)',
+                nombre_cientifico: 'Crotalus spp.',
+                clasificacion: 'Serpientes',
+                nivel_toxicidad: 'Severo',
+                descripcion: 'Serpiente vipérida con apéndice caudal característico (crótalo) en el ápice de la cola. Posee termorreceptores y dentición con colmillos inoculadores retrátiles.',
+                rasgos_clave: [
+                    'Apéndice caudal (crótalo) en el ápice de la cola',
+                    'Termorreceptores (fosetas loreales)',
+                    'Dentición: colmillos inoculadores retrátiles',
+                    'Cabeza triangular característica'
+                ],
+                manifestaciones_clinicas: {
+                    leve: 'Edema local 1-2 segmentos, dolor, sin hemorragia sistémica',
+                    moderado: 'Edema extenso (>10 cm), sangrado local, náusea, oliguria leve, alteración de tiempos de coagulación',
+                    severo: 'Necrosis tisular, mionercrosis, hemorragia bucal/rectal, desfibrinación masiva'
+                },
+                antiveno: 'Antivipymn (Antiviperino polivalente)',
+                dosis: {
+                    leve: 'Adultos: 3-5 frascos IV',
+                    moderado: 'Adultos: 6-10 frascos IV',
+                    severo: 'Adultos: 11-15 frascos IV',
+                    pediatrico: 'Niños: 6-10 (Leve), 15 (Moderado), 20-30 (Severo)'
+                },
+                no_hacer: [
+                    'NO aplicar torniquetes',
+                    'NO succionar ni hacer cortes',
+                    'NO aplicar hielo directamente',
+                    'NO administrar sangre total ni plasma fresco'
+                ],
+                distribucion: 'Presente en zonas áridas y semiáridas de México'
+            },
+            {
+                id: 3,
+                nombre_comun: 'Araña Violinista (Loxosceles spp.)',
+                nombre_cientifico: 'Loxosceles spp.',
+                clasificacion: 'Arácnidos',
+                nivel_toxicidad: 'Moderado',
+                descripcion: 'Araña de tamaño pequeño (8-13 mm) con mancha característica en forma de violín más oscura que el resto del cuerpo. Posee seis ojos dispuestos en tres pares (forma de diada).',
+                rasgos_clave: [
+                    'Cefalotórax en forma de violín (mancha oscura)',
+                    'Seis ojos dispuestos en tres pares (diada)',
+                    'Cuerpo de 8 a 13 mm',
+                    'Patas largas y delgadas'
+                ],
+                manifestaciones_clinicas: {
+                    leve: 'Edema local en 1-2 segmentos, dolor, sin hemorragia sistémica',
+                    moderado: 'Edema extenso (>10 cm), sangrado local, náusea, oliguria leve',
+                    severo: 'Necrosis tisular, hemorragia bucal/rectal, desfibrinación masiva'
+                },
+                antiveno: 'Aracmyn Plus (Antiarácnido polivalente)',
+                dosis: {
+                    moderado: 'Adultos: 1 frasco, Niños <15 años: 2 frascos',
+                    severo: 'Adultos: 2 frascos, Niños <15 años: 3 frascos'
+                },
+                no_hacer: [
+                    'NO aplicar torniquetes',
+                    'NO succionar ni hacer cortes',
+                    'NO aplicar hielo directamente'
+                ],
+                distribucion: 'Presente en zonas urbanas y rurales de México'
+            },
+            {
+                id: 4,
+                nombre_comun: 'Hongo Amanita (Amanita spp.)',
+                nombre_cientifico: 'Amanita spp.',
+                clasificacion: 'Hongos',
+                nivel_toxicidad: 'Severo',
+                descripcion: 'Hongo de importancia médica. La identificación se realiza mediante el reconocimiento de "dobles tóxicos", comparando especies comestibles con sus contrapartes venenosas muy similares.',
+                rasgos_clave: [
+                    'Identificación mediante "dobles tóxicos"',
+                    'Comparación con especies comestibles similares',
+                    'Presencia de volva (copa basal)',
+                    'Anillo en el tallo'
+                ],
+                manifestaciones_clinicas: {
+                    leve: 'Náusea, vómito, diarrea',
+                    moderado: 'Síntomas gastrointestinales intensos, deshidratación',
+                    severo: 'Falla hepática, falla renal, muerte'
+                },
+                antiveno: 'Manejo sintomático',
+                dosis: {
+                    general: 'Consultar con Centro de Toxicología Regional'
+                },
+                no_hacer: [
+                    'NO automedicarse',
+                    'NO retrasar atención médica',
+                    'NO intentar identificar sin experto'
+                ],
+                distribucion: 'Presente en zonas boscosas de México'
+            },
+            {
+                id: 5,
+                nombre_comun: 'Hongo Gyromitra (Gyromitra spp.)',
+                nombre_cientifico: 'Gyromitra spp.',
+                clasificacion: 'Hongos',
+                nivel_toxicidad: 'Severo',
+                descripcion: 'Hongo de importancia médica similar a Amanita. Requiere identificación cuidadosa mediante comparación de características morfológicas con especies comestibles.',
+                rasgos_clave: [
+                    'Sombrero con aspecto cerebriforme',
+                    'Ausencia de volva',
+                    'Comparación con especies comestibles'
+                ],
+                manifestaciones_clinicas: {
+                    leve: 'Náusea, vómito',
+                    moderado: 'Síntomas gastrointestinales, ataxia',
+                    severo: 'Convulsiones, coma, muerte'
+                },
+                antiveno: 'Manejo sintomático',
+                dosis: {
+                    general: 'Consultar con Centro de Toxicología Regional'
+                },
+                no_hacer: [
+                    'NO automedicarse',
+                    'NO retrasar atención médica'
+                ],
+                distribucion: 'Presente en zonas boscosas de México'
+            }
+        ];
+
+        // Componente principal
+        function ToxicoPWA() {
+            const [species, setSpecies] = useState([]);
+            const [filteredSpecies, setFilteredSpecies] = useState([]);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [selectedSpecies, setSelectedSpecies] = useState(null);
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            const [loading, setLoading] = useState(true);
+            const dbRef = useRef(null);
+
+            // Inicializar IndexedDB
+            useEffect(() => {
+                const initDB = async () => {
+                    try {
+                        const request = indexedDB.open('ToxicoDB', 1);
+                        
+                        request.onerror = () => {
+                            console.error('Error abriendo IndexedDB');
+                            setSpecies(SPECIES_DATABASE);
+                            setFilteredSpecies(SPECIES_DATABASE);
+                            setLoading(false);
+                        };
+
+                        request.onsuccess = (event) => {
+                            dbRef.current = event.target.result;
+                            
+                            // Verificar si el object store existe
+                            if (!dbRef.current.objectStoreNames.contains('especies')) {
+                                dbRef.current.close();
+                                const upgradeRequest = indexedDB.open('ToxicoDB', 2);
+                                upgradeRequest.onupgradeneeded = (e) => {
+                                    const db = e.target.result;
+                                    if (!db.objectStoreNames.contains('especies')) {
+                                        const store = db.createObjectStore('especies', { keyPath: 'id' });
+                                        store.createIndex('nombre_comun', 'nombre_comun', { unique: false });
+                                        store.createIndex('clasificacion', 'clasificacion', { unique: false });
+                                        store.createIndex('nivel_toxicidad', 'nivel_toxicidad', { unique: false });
+                                    }
+                                };
+                                upgradeRequest.onsuccess = () => {
+                                    dbRef.current = upgradeRequest.result;
+                                    populateDB();
+                                };
+                            } else {
+                                populateDB();
+                            }
+                        };
+
+                        request.onupgradeneeded = (event) => {
+                            const db = event.target.result;
+                            if (!db.objectStoreNames.contains('especies')) {
+                                const store = db.createObjectStore('especies', { keyPath: 'id' });
+                                store.createIndex('nombre_comun', 'nombre_comun', { unique: false });
+                                store.createIndex('clasificacion', 'clasificacion', { unique: false });
+                                store.createIndex('nivel_toxicidad', 'nivel_toxicidad', { unique: false });
+                            }
+                        };
+                    } catch (err) {
+                        console.error('Error inicializando DB:', err);
+                        setSpecies(SPECIES_DATABASE);
+                        setFilteredSpecies(SPECIES_DATABASE);
+                        setLoading(false);
+                    }
+                };
+
+                initDB();
+            }, []);
+
+            // Poblar IndexedDB
+            const populateDB = async () => {
+                try {
+                    const transaction = dbRef.current.transaction(['especies'], 'readonly');
+                    const store = transaction.objectStore('especies');
+                    const getAllRequest = store.getAll();
+
+                    getAllRequest.onsuccess = () => {
+                        if (getAllRequest.result.length === 0) {
+                            // Base de datos vacía, insertar datos
+                            const writeTx = dbRef.current.transaction(['especies'], 'readwrite');
+                            const writeStore = writeTx.objectStore('especies');
+                            SPECIES_DATABASE.forEach(sp => writeStore.add(sp));
+                            writeTx.oncomplete = () => {
+                                setSpecies(SPECIES_DATABASE);
+                                setFilteredSpecies(SPECIES_DATABASE);
+                                setLoading(false);
+                            };
+                        } else {
+                            setSpecies(getAllRequest.result);
+                            setFilteredSpecies(getAllRequest.result);
+                            setLoading(false);
+                        }
+                    };
+                } catch (err) {
+                    console.error('Error poblando DB:', err);
+                    setSpecies(SPECIES_DATABASE);
+                    setFilteredSpecies(SPECIES_DATABASE);
+                    setLoading(false);
+                }
+            };
+
+            // Manejar búsqueda
+            useEffect(() => {
+                if (searchTerm.trim() === '') {
+                    setFilteredSpecies(species);
+                } else {
+                    const term = searchTerm.toLowerCase();
+                    const filtered = species.filter(sp =>
+                        sp.nombre_comun.toLowerCase().includes(term) ||
+                        sp.nombre_cientifico.toLowerCase().includes(term) ||
+                        sp.clasificacion.toLowerCase().includes(term)
+                    );
+                    setFilteredSpecies(filtered);
+                }
+            }, [searchTerm, species]);
+
+            // Detectar estado online/offline
+            useEffect(() => {
+                const handleOnline = () => setIsOnline(true);
+                const handleOffline = () => setIsOnline(false);
+
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+
+                return () => {
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
+                };
+            }, []);
+
+            const getSeverityColor = (severity) => {
+                switch (severity) {
+                    case 'Leve':
+                        return 'severity-leve';
+                    case 'Moderado':
+                        return 'severity-moderado';
+                    case 'Severo':
+                        return 'severity-severo';
+                    default:
+                        return 'severity-leve';
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <div id="offline-indicator" className="offline-indicator">
+                        📡 Modo Offline - Funcionando sin conexión a internet
+                    </div>
+
+                    {/* Header */}
+                    <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+                        <div className="max-w-6xl mx-auto px-4 py-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="text-3xl">⚕️</div>
+                                    <div>
+                                        <h1 className="text-2xl font-bold">Guía Toxicológica</h1>
+                                        <p className="text-blue-100 text-sm">Emergencias Médicas en México</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className={`text-sm font-semibold ${isOnline ? 'text-green-300' : 'text-yellow-300'}`}>
+                                        {isOnline ? '🟢 Online' : '🔴 Offline'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="max-w-6xl mx-auto px-4 py-8">
+                        {selectedSpecies ? (
+                            // Vista detallada
+                            <div className="bg-white rounded-lg shadow-lg p-6">
+                                <button
+                                    onClick={() => setSelectedSpecies(null)}
+                                    className="mb-4 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-semibold transition"
+                                >
+                                    ← Volver al Catálogo
+                                </button>
+
+                                <div className="grid md:grid-cols-3 gap-6">
+                                    {/* Información General */}
+                                    <div className="md:col-span-2">
+                                        <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                                            {selectedSpecies.nombre_comun}
+                                        </h2>
+                                        <p className="text-gray-600 italic mb-4">
+                                            {selectedSpecies.nombre_cientifico}
+                                        </p>
+
+                                        <div className="mb-6">
+                                            <span className={`severity-badge ${getSeverityColor(selectedSpecies.nivel_toxicidad)}`}>
+                                                Toxicidad: {selectedSpecies.nivel_toxicidad}
+                                            </span>
+                                        </div>
+
+                                        <div className="mb-6">
+                                            <h3 className="text-xl font-bold text-gray-800 mb-2">Descripción</h3>
+                                            <p className="text-gray-700 leading-relaxed">
+                                                {selectedSpecies.descripcion}
+                                            </p>
+                                        </div>
+
+                                        <div className="mb-6">
+                                            <h3 className="text-xl font-bold text-gray-800 mb-3">Rasgos Clave para Identificación</h3>
+                                            <ul className="space-y-2">
+                                                {selectedSpecies.rasgos_clave.map((rasgo, idx) => (
+                                                    <li key={idx} className="flex items-start gap-3">
+                                                        <span className="text-blue-600 font-bold mt-1">✓</span>
+                                                        <span className="text-gray-700">{rasgo}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
+                                        <div className="mb-6">
+                                            <h3 className="text-xl font-bold text-gray-800 mb-3">Manifestaciones Clínicas</h3>
+                                            <div className="space-y-3">
+                                                {Object.entries(selectedSpecies.manifestaciones_clinicas).map(([nivel, manifestacion]) => (
+                                                    <div key={nivel} className="bg-gray-50 p-3 rounded-lg">
+                                                        <p className="font-semibold text-gray-800 capitalize">{nivel}:</p>
+                                                        <p className="text-gray-700">{manifestacion}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="mb-6">
+                                            <h3 className="text-xl font-bold text-gray-800 mb-3">Lista de "No Hacer"</h3>
+                                            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                                                <ul className="space-y-2">
+                                                    {selectedSpecies.no_hacer.map((item, idx) => (
+                                                        <li key={idx} className="flex items-start gap-3">
+                                                            <span className="text-red-600 font-bold mt-1">✕</span>
+                                                            <span className="text-gray-700">{item}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <div className="mb-6">
+                                            <h3 className="text-xl font-bold text-gray-800 mb-2">Distribución Geográfica</h3>
+                                            <p className="text-gray-700 bg-blue-50 p-3 rounded-lg">
+                                                📍 {selectedSpecies.distribucion}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Panel de Tratamiento */}
+                                    <div className="md:col-span-1">
+                                        <div className="bg-green-50 border-2 border-green-500 rounded-lg p-4 sticky top-4">
+                                            <h3 className="text-lg font-bold text-green-800 mb-3">💊 Tratamiento</h3>
+                                            
+                                            {selectedSpecies.antiveno && (
+                                                <div className="mb-4">
+                                                    <p className="text-sm text-gray-600 font-semibold">Antiveno:</p>
+                                                    <p className="text-green-800 font-bold">{selectedSpecies.antiveno}</p>
+                                                </div>
+                                            )}
+
+                                            <div className="space-y-3">
+                                                {Object.entries(selectedSpecies.dosis).map(([nivel, dosis]) => (
+                                                    <div key={nivel} className="bg-white p-3 rounded-lg border border-green-200">
+                                                        <p className="text-xs font-semibold text-gray-600 uppercase">{nivel}</p>
+                                                        <p className="text-sm text-gray-800">{dosis}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+                                                <p className="text-xs font-semibold text-yellow-800">⚠️ IMPORTANTE</p>
+                                                <p className="text-xs text-yellow-900 mt-1">
+                                                    En caso de emergencia, contacte inmediatamente al Centro de Toxicología Regional o al 911.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            // Vista de catálogo
+                            <>
+                                {/* Búsqueda */}
+                                <div className="mb-8">
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Buscar por nombre común, científico o clasificación..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 transition"
+                                        />
+                                        <span className="absolute left-4 top-3.5 text-xl">🔍</span>
+                                    </div>
+                                </div>
+
+                                {/* Resultados */}
+                                {loading ? (
+                                    <div className="flex justify-center items-center py-12">
+                                        <div className="loading-spinner"></div>
+                                        <p className="ml-4 text-gray-600">Cargando base de datos...</p>
+                                    </div>
+                                ) : filteredSpecies.length === 0 ? (
+                                    <div className="text-center py-12 bg-white rounded-lg shadow">
+                                        <p className="text-gray-600 text-lg">No se encontraron especies que coincidan con tu búsqueda.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {filteredSpecies.map((sp) => (
+                                            <div
+                                                key={sp.id}
+                                                onClick={() => setSelectedSpecies(sp)}
+                                                className="species-card bg-white rounded-lg shadow-md p-6 cursor-pointer"
+                                            >
+                                                <div className="mb-3">
+                                                    <span className={`severity-badge ${getSeverityColor(sp.nivel_toxicidad)}`}>
+                                                        {sp.nivel_toxicidad}
+                                                    </span>
+                                                </div>
+                                                <h3 className="text-lg font-bold text-gray-800 mb-1">
+                                                    {sp.nombre_comun}
+                                                </h3>
+                                                <p className="text-gray-600 italic text-sm mb-3">
+                                                    {sp.nombre_cientifico}
+                                                </p>
+                                                <p className="text-gray-700 text-sm mb-4 line-clamp-3">
+                                                    {sp.descripcion}
+                                                </p>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-600">
+                                                        📁 {sp.clasificacion}
+                                                    </span>
+                                                    <span className="text-blue-600 font-semibold">
+                                                        Ver detalles →
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="bg-gray-800 text-gray-300 text-center py-6 mt-12">
+                        <p className="text-sm">
+                            📚 Guía Toxicológica PWA v1.0 | Basada en GPC, NOM-033, Manuales SINAVE 2024 y Redtox
+                        </p>
+                        <p className="text-xs text-gray-500 mt-2">
+                            ⚠️ Esta aplicación es una herramienta de referencia. En emergencias, contacte al 911 o al Centro de Toxicología Regional.
+                        </p>
+                    </footer>
+                </div>
+            );
+        }
+
+        // Renderizar aplicación
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ToxicoPWA />);
+    </script>
+</body>
+</html>
